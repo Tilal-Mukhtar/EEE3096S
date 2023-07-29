@@ -1,18 +1,7 @@
-# EEE3096S Practicals
+# EEE3096S Practicals 2023
 
-
-## Description
-This repo will consist of all the Practicals done in EEE3096S in 2023.
-
-### Software utilized
-
-* Linux, Ubuntu
+Repository of tutorials and practicals for EEE3096S 2023
 
 ## Authors
-
-* Deereshan Naidoo
-* Tilal Mukhtar
-
-## License
-
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
+* Deereshan Naidoo - NDXDEE010
+* Tilal Mukhtar - MKHTIL001
