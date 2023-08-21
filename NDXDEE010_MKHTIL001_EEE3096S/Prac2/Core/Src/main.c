@@ -53,9 +53,9 @@ TIM_HandleTypeDef htim16;
 
 /* USER CODE BEGIN PV */
 // TODO: Define any input variables
-static uint8_t patterns[] = {};
-
-
+static uint8_t patterns[] = {0b10101010, 0b01010101, 0b11001100, 0b00110011, 0b11110000, 0b00001111}; // LED patterns
+static uint16_t startAddress = 0x0000; // Initial address to write to and read from EEPROM
+static uint8_t readCount = 0; // Counter to keep track of EEPROM reads
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -106,10 +106,13 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   // TODO: Start timer TIM16
-
+  HAL_TIM_Base_Start_IT(&htim16); // Starts timer TIM16
+  uint16_t defaultARR = TIM16->ARR; // Stores default TIM16 ARR value
 
   // TODO: Write all "patterns" to EEPROM using SPI
-
+  for (uint8_t i=0; i<sizeof(patterns); i++) {
+	  write_to_address(startAddress+i, patterns[i]);
+  }
 
   /* USER CODE END 2 */
 
@@ -122,7 +125,16 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	// TODO: Check button PA0; if pressed, change timer delay
-
+	uint16_t input = GPIOA->IDR; // Reads IDR of GPIOA
+	input &= 0x0001; // Extracts IDR bit corresponding to SWO
+	// Checks if SWO is pressed
+	if (input==0) {
+		TIM16->ARR = defaultARR/2; // Sets TIM16 to 0.5s delay
+	}
+	// Otherwise if SWO is not pressed
+	else {
+		TIM16->ARR = defaultARR; // Sets TIM16 to 1s delay
+	}
   }
   /* USER CODE END 3 */
 }
@@ -414,13 +426,13 @@ static uint8_t read_from_address(uint16_t address) {
 	dummy = SPI2->DR;
 
 	// Clock in the data
-	*((uint8_t*)(&SPI2->DR)) = 0x42; 			    // Clock out some junk data
+	*((uint8_t*)(&SPI2->DR)) = 0x42;			// Clock out some junk data
 	while ((SPI2->SR & SPI_SR_RXNE) == 0); 		// Hang while RX is empty
 	dummy = SPI2->DR;
-	GPIOB->BSRR |= GPIO_BSRR_BS_12; 			    // Pull CS high
+	GPIOB->BSRR |= GPIO_BSRR_BS_12; 			// Pull CS high
 	delay(5000);
 
-	return dummy;								              // Return read data
+	return dummy;								// Return read data
 }
 
 // Timer rolled over
@@ -430,7 +442,21 @@ void TIM16_IRQHandler(void)
 	HAL_TIM_IRQHandler(&htim16);
 
 	// TODO: Change to next LED pattern; output 0x01 if the read SPI data is incorrect
-
+	uint8_t pattern; // Stores LED pattern read from EEPROM
+	// Checks if the last LED pattern has been read
+	if (readCount>=sizeof(patterns)) {
+		readCount = 0; // Resets read counter to read first LED pattern
+	}
+	// Reads the LED pattern from EEPROM at the current address
+	pattern = read_from_address(startAddress+readCount);
+	// Checks if the read from the EEPROM does not match its corresponding LED pattern
+	if (pattern!=patterns[readCount]) {
+		pattern = 0x01; // Sets LED pattern to indicate read error
+	}
+	// Increments the read counter for the next read
+	readCount++;
+	// Sets ODR of GPIOB to output the LED pattern
+	GPIOB->ODR = pattern;
 }
 
 /* USER CODE END 4 */
