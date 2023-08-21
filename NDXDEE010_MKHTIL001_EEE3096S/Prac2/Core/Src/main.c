@@ -129,11 +129,14 @@ int main(void)
 	input &= 0x0001; // Extracts IDR bit corresponding to SWO
 	// Checks if SWO is pressed
 	if (input==0) {
-		TIM16->ARR = defaultARR/2; // Sets TIM16 to 0.5s delay
-	}
-	// Otherwise if SWO is not pressed
-	else {
-		TIM16->ARR = defaultARR; // Sets TIM16 to 1s delay
+		// Checks if TIM16 is set to 1s delay
+		if (TIM16->ARR==defaultARR) {
+			TIM16->ARR = defaultARR/2; // Sets TIM16 to 0.5s delay
+		}
+		// Otherwise
+		else {
+			TIM16->ARR = defaultARR; // Sets TIM16 to 1s delay
+		}
 	}
   }
   /* USER CODE END 3 */
